@@ -17,17 +17,17 @@ The aim of this project is to select and interpret one or more compelling data v
 - `Dashboard.Rmd` — The RMarkdown source file used to compile the visuals and build the narrative script.
 - `README.md` — This project overview file.
 
-## 🎥 Vodcast Output
+##  Vodcast Output
 
 The final output is a short vodcast (not included in this repo) that presents the narrative using the visuals created. The vodcast was designed to be accessible, engaging, and informative, targeting both general and data-literate audiences.
 
-## 🛠️ Tools Used
+##  Tools Used
 
 - **RMarkdown** for scripting the visuals and narrative.
 - **ggplot2** and supporting R libraries for visualisation.
 - Optional tools like screen recording software and audio editors were used to compile the vodcast.
 
-## 🔍 Key Focus
+##  Key Focus
 
 - Effective data storytelling
 - Clean, interpretable visualisations
