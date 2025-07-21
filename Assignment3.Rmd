@@ -1,0 +1,686 @@
+---
+title: "Australian Energy Statistics"
+output: html_document
+date: "2024-05-22"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+# Loading the necessary libraries
+library(shiny)
+library(ggplot2)
+library(plotly)
+library(zoo)
+library(stringr)
+library(tidyr)
+library(readxl)
+library(dplyr)
+library(scales)
+library(RColorBrewer)
+library(rsconnect)
+library(readr)
+
+
+
+# Function to preprocess each sheet
+preprocess_sheet1 <- function(data, state) {
+  colnames(data) <- c("Year", "Coal", "Oil", "Gas", "Renewables", "Statistical Discrepancy", "Total")
+  data$State <- state
+  data$Year <- as.numeric(substr(data$Year, 6, 7)) + 2000  # Convert to the ending year of the range
+  data$Coal <- as.numeric(data$Coal)
+  data$Oil <- as.numeric(data$Oil)
+  data$Gas <- as.numeric(data$Gas)
+  data$Renewables <- as.numeric(data$Renewables)
+  data$`Statistical Discrepancy` <- as.numeric(data$`Statistical Discrepancy`)
+  data$Total <- as.numeric(data$Total)
+  data[is.na(data)] <- 0
+  return(data)
+}
+
+# Reading the Excel sheets
+energy_data <- read_xlsx("Australian Energy Statistics 2023 Table C.xlsx", sheet = 3, range = 'B5:H20')
+energy_data1 <- read_xlsx("Australian Energy Statistics 2023 Table C.xlsx", sheet = 4, range = 'B5:H20')
+energy_data2 <- read_xlsx("Australian Energy Statistics 2023 Table C.xlsx", sheet = 5, range = 'B5:H20')
+energy_data3 <- read_xlsx("Australian Energy Statistics 2023 Table C.xlsx", sheet = 6, range = 'B5:H20')
+energy_data4 <- read_xlsx("Australian Energy Statistics 2023 Table C.xlsx", sheet = 7, range = 'B5:H20')
+energy_data5 <- read_xlsx("Australian Energy Statistics 2023 Table C.xlsx", sheet = 8, range = 'B5:H20')
+energy_data6 <- read_xlsx("Australian Energy Statistics 2023 Table C.xlsx", sheet = 9, range = 'B5:H20')
+
+# Preprocessing Sheet 3 (NSW)
+colnames(energy_data) <- c("Year", "Coal", "Oil", "Gas", "Renewables", "Statistical Discrepancy", "Total")
+str(energy_data)
+energy_data$State <- "NSW"
+energy_data$Year <- substr(energy_data$Year, start = 1, stop = 4)
+energy_data$Year <- as.double(energy_data$Year)
+energy_data$Coal <- as.double(energy_data$Coal)
+energy_data$Oil <- as.double(energy_data$Oil)
+energy_data$Gas <- as.double(energy_data$Gas)
+energy_data$Renewables <- as.double(energy_data$Renewables)
+energy_data$`Statistical Discrepancy` <- as.double(energy_data$`Statistical Discrepancy`)
+energy_data$Total <- as.double(energy_data$Total)
+energy_data[is.na(energy_data)] <- 0
+
+
+# Preprocessing Sheet 4 (VIC)
+colnames(energy_data1) <- colnames(energy_data)
+str(energy_data1)
+energy_data1$State <- "VIC"
+energy_data1$Year <- substr(energy_data1$Year, start = 1, stop = 4)
+energy_data1$Year <- as.double(energy_data1$Year)
+energy_data1$Coal <- as.double(energy_data1$Coal)
+energy_data1$Oil <- as.double(energy_data1$Oil)
+energy_data1$Gas <- as.double(energy_data1$Gas)
+energy_data1$Renewables <- as.double(energy_data1$Renewables)
+energy_data1$`Statistical Discrepancy` <- as.double(energy_data1$`Statistical Discrepancy`)
+energy_data1$Total <- as.double(energy_data1$Total)
+energy_data1[is.na(energy_data1)] <- 0
+
+# Preprocessing Sheet 5 (QLD)
+colnames(energy_data2) <- colnames(energy_data)
+str(energy_data2)
+energy_data2$State <- "QLD"
+energy_data2$Year <- substr(energy_data2$Year, start = 1, stop = 4)
+energy_data2$Year <- as.double(energy_data2$Year)
+energy_data2$Coal <- as.double(energy_data2$Coal)
+energy_data2$Oil <- as.double(energy_data2$Oil)
+energy_data2$Gas <- as.double(energy_data2$Gas)
+energy_data2$Renewables <- as.double(energy_data2$Renewables)
+energy_data2$`Statistical Discrepancy` <- as.double(energy_data2$`Statistical Discrepancy`)
+energy_data2$Total <- as.double(energy_data2$Total)
+energy_data2[is.na(energy_data2)] <- 0
+
+# Preprocessing Sheet 6 (WA)
+colnames(energy_data3) <- colnames(energy_data)
+str(energy_data3)
+energy_data3$State <- "WA"
+energy_data3$Year <- substr(energy_data3$Year, start = 1, stop = 4)
+energy_data3$Year <- as.double(energy_data3$Year)
+energy_data3$Coal <- as.double(energy_data3$Coal)
+energy_data3$Oil <- as.double(energy_data3$Oil)
+energy_data3$Gas <- as.double(energy_data3$Gas)
+energy_data3$Renewables <- as.double(energy_data3$Renewables)
+energy_data3$`Statistical Discrepancy` <- as.double(energy_data3$`Statistical Discrepancy`)
+energy_data3$Total <- as.double(energy_data3$Total)
+energy_data3[is.na(energy_data3)] <- 0
+
+# Preprocessing Sheet 7 (SA)
+colnames(energy_data4) <- colnames(energy_data)
+str(energy_data4)
+energy_data4$State <- "SA"
+energy_data4$Year <- substr(energy_data4$Year, start = 1, stop = 4)
+energy_data4$Year <- as.double(energy_data4$Year)
+energy_data4$Coal <- as.double(energy_data4$Coal)
+energy_data4$Oil <- as.double(energy_data4$Oil)
+energy_data4$Gas <- as.double(energy_data4$Gas)
+energy_data4$Renewables <- as.double(energy_data4$Renewables)
+energy_data4$`Statistical Discrepancy` <- as.double(energy_data4$`Statistical Discrepancy`)
+energy_data4$Total <- as.double(energy_data4$Total)
+energy_data4[is.na(energy_data4)] <- 0
+
+# Preprocessing Sheet 8 (TAS)
+colnames(energy_data5) <- colnames(energy_data)
+str(energy_data5)
+energy_data5$State <- "TAS"
+energy_data5$Year <- substr(energy_data5$Year, start = 1, stop = 4)
+energy_data5$Year <- as.double(energy_data5$Year)
+energy_data5$Coal <- as.double(energy_data5$Coal)
+energy_data5$Oil <- as.double(energy_data5$Oil)
+energy_data5$Gas <- as.double(energy_data5$Gas)
+energy_data5$Renewables <- as.double(energy_data5$Renewables)
+energy_data5$`Statistical Discrepancy` <- as.double(energy_data5$`Statistical Discrepancy`)
+energy_data5$Total <- as.double(energy_data5$Total)
+energy_data5[is.na(energy_data5)] <- 0
+
+# Preprocessing Sheet 9 (NT)
+colnames(energy_data6) <- colnames(energy_data)
+str(energy_data6)
+energy_data6$State <- "NT"
+energy_data6$Year <- substr(energy_data6$Year, start = 1, stop = 4)
+energy_data6$Year <- as.double(energy_data6$Year)
+energy_data6$Coal <- as.double(energy_data6$Coal)
+energy_data6$Oil <- as.double(energy_data6$Oil)
+energy_data6$Gas <- as.double(energy_data6$Gas)
+energy_data6$Renewables <- as.double(energy_data6$Renewables)
+energy_data6$`Statistical Discrepancy` <- as.double(energy_data6$`Statistical Discrepancy`)
+energy_data6$Total <- as.double(energy_data6$Total)
+energy_data6[is.na(energy_data6)] <- 0
+
+# Combine all data frames into one
+combined_data1 <- bind_rows(energy_data, energy_data1, energy_data2, energy_data3, energy_data4, energy_data5, energy_data6)
+
+# Print the structure and first few rows of the final data frame to verify
+str(combined_data1)
+print(head(combined_data1))
+
+
+
+# Save the combined data frame to a CSV file
+write.csv(combined_data1, "combined_data1.csv", row.names = FALSE)
+
+
+
+
+
+
+
+
+
+
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+
+```{r shinyap}
+
+# Preprocessing Australian Energy Statistics 2023 Table E 
+
+
+# Preprocessing Sheet 3 (NSW)
+energy_data_sheet3 <- read_xlsx("Australian Energy Statistics 2023 Table E.xlsx", sheet = 3, range = 'B41:M55')
+colnames(energy_data_sheet3) <- c("Year", "Agriculture", "Mining", "Manufacturing", "Electricity generation",
+                                  "Construction", "Transport", "Water and waste b", "Commercial and services c",
+                                  "Residential", "Other d", "Total")
+energy_data_sheet3$State <- "NSW"
+energy_data_sheet3$Year <- substr(energy_data_sheet3$Year, start = 1, stop = 4)
+energy_data_sheet3$Year <- as.numeric(energy_data_sheet3$Year)   # Convert to the ending year of the range
+energy_data_sheet3$Agriculture <- as.numeric(energy_data_sheet3$Agriculture)
+energy_data_sheet3$Mining <- as.numeric(energy_data_sheet3$Mining)
+energy_data_sheet3$Manufacturing <- as.numeric(energy_data_sheet3$Manufacturing)
+energy_data_sheet3$`Electricity generation` <- as.numeric(energy_data_sheet3$`Electricity generation`)
+energy_data_sheet3$Construction <- as.numeric(energy_data_sheet3$Construction)
+energy_data_sheet3$Transport <- as.numeric(energy_data_sheet3$Transport)
+energy_data_sheet3$`Water and waste b` <- as.numeric(energy_data_sheet3$`Water and waste b`)
+energy_data_sheet3$`Commercial and services c` <- as.numeric(energy_data_sheet3$`Commercial and services c`)
+energy_data_sheet3$Residential <- as.numeric(energy_data_sheet3$Residential)
+energy_data_sheet3$`Other d` <- as.numeric(energy_data_sheet3$`Other d`)
+energy_data_sheet3$Total <- as.numeric(energy_data_sheet3$Total)
+energy_data_sheet3[is.na(energy_data_sheet3)] <- 0
+
+# Preprocessing Sheet 4 (VIC)
+energy_data_sheet4 <- read_xlsx("Australian Energy Statistics 2023 Table E.xlsx", sheet = 4, range = 'B41:M55')
+colnames(energy_data_sheet4) <- colnames(energy_data_sheet3)
+energy_data_sheet4$State <- "VIC"
+energy_data_sheet4$Year <- substr(energy_data_sheet4$Year, start = 1, stop = 4)
+energy_data_sheet4$Year <- as.numeric(energy_data_sheet4$Year)   # Convert to the ending year of the range
+energy_data_sheet4$Agriculture <- as.numeric(energy_data_sheet4$Agriculture)
+energy_data_sheet4$Mining <- as.numeric(energy_data_sheet4$Mining)
+energy_data_sheet4$Manufacturing <- as.numeric(energy_data_sheet4$Manufacturing)
+energy_data_sheet4$`Electricity generation` <- as.numeric(energy_data_sheet4$`Electricity generation`)
+energy_data_sheet4$Construction <- as.numeric(energy_data_sheet4$Construction)
+energy_data_sheet4$Transport <- as.numeric(energy_data_sheet4$Transport)
+energy_data_sheet4$`Water and waste b` <- as.numeric(energy_data_sheet4$`Water and waste b`)
+energy_data_sheet4$`Commercial and services c` <- as.numeric(energy_data_sheet4$`Commercial and services c`)
+energy_data_sheet4$Residential <- as.numeric(energy_data_sheet4$Residential)
+energy_data_sheet4$`Other d` <- as.numeric(energy_data_sheet4$`Other d`)
+energy_data_sheet4$Total <- as.numeric(energy_data_sheet4$Total)
+energy_data_sheet4[is.na(energy_data_sheet4)] <- 0
+
+# Preprocessing Sheet 5 (QLD)
+energy_data_sheet5 <- read_xlsx("Australian Energy Statistics 2023 Table E.xlsx", sheet = 5, range = 'B41:M55')
+colnames(energy_data_sheet5) <- colnames(energy_data_sheet3)
+energy_data_sheet5$State <- "QLD"
+energy_data_sheet5$Year <- substr(energy_data_sheet5$Year, start = 1, stop = 4)
+energy_data_sheet5$Year <- as.numeric(energy_data_sheet5$Year)   # Convert to the ending year of the range
+energy_data_sheet5$Agriculture <- as.numeric(energy_data_sheet5$Agriculture)
+energy_data_sheet5$Mining <- as.numeric(energy_data_sheet5$Mining)
+energy_data_sheet5$Manufacturing <- as.numeric(energy_data_sheet5$Manufacturing)
+energy_data_sheet5$`Electricity generation` <- as.numeric(energy_data_sheet5$`Electricity generation`)
+energy_data_sheet5$Construction <- as.numeric(energy_data_sheet5$Construction)
+energy_data_sheet5$Transport <- as.numeric(energy_data_sheet5$Transport)
+energy_data_sheet5$`Water and waste b` <- as.numeric(energy_data_sheet5$`Water and waste b`)
+energy_data_sheet5$`Commercial and services c` <- as.numeric(energy_data_sheet5$`Commercial and services c`)
+energy_data_sheet5$Residential <- as.numeric(energy_data_sheet5$Residential)
+energy_data_sheet5$`Other d` <- as.numeric(energy_data_sheet5$`Other d`)
+energy_data_sheet5$Total <- as.numeric(energy_data_sheet5$Total)
+energy_data_sheet5[is.na(energy_data_sheet5)] <- 0
+
+# Preprocessing Sheet 6 (WA)
+energy_data_sheet6 <- read_xlsx("Australian Energy Statistics 2023 Table E.xlsx", sheet = 6, range = 'B41:M55')
+colnames(energy_data_sheet6) <- colnames(energy_data_sheet3)
+energy_data_sheet6$State <- "WA"
+energy_data_sheet6$Year <- substr(energy_data_sheet6$Year, start = 1, stop = 4)
+energy_data_sheet6$Year <- as.numeric(energy_data_sheet6$Year)   # Convert to the ending year of the range
+energy_data_sheet6$Agriculture <- as.numeric(energy_data_sheet6$Agriculture)
+energy_data_sheet6$Mining <- as.numeric(energy_data_sheet6$Mining)
+energy_data_sheet6$Manufacturing <- as.numeric(energy_data_sheet6$Manufacturing)
+energy_data_sheet6$`Electricity generation` <- as.numeric(energy_data_sheet6$`Electricity generation`)
+energy_data_sheet6$Construction <- as.numeric(energy_data_sheet6$Construction)
+energy_data_sheet6$Transport <- as.numeric(energy_data_sheet6$Transport)
+energy_data_sheet6$`Water and waste b` <- as.numeric(energy_data_sheet6$`Water and waste b`)
+energy_data_sheet6$`Commercial and services c` <- as.numeric(energy_data_sheet6$`Commercial and services c`)
+energy_data_sheet6$Residential <- as.numeric(energy_data_sheet6$Residential)
+energy_data_sheet6$`Other d` <- as.numeric(energy_data_sheet6$`Other d`)
+energy_data_sheet6$Total <- as.numeric(energy_data_sheet6$Total)
+energy_data_sheet6[is.na(energy_data_sheet6)] <- 0
+
+# Preprocessing Sheet 7 (SA)
+energy_data_sheet7 <- read_xlsx("Australian Energy Statistics 2023 Table E.xlsx", sheet = 7, range = 'B41:M55')
+colnames(energy_data_sheet7) <- colnames(energy_data_sheet3)
+energy_data_sheet7$State <- "SA"
+energy_data_sheet7$Year <- substr(energy_data_sheet7$Year, start = 1, stop = 4)
+energy_data_sheet7$Year <- as.numeric(energy_data_sheet7$Year)   # Convert to the ending year of the range
+energy_data_sheet7$Agriculture <- as.numeric(energy_data_sheet7$Agriculture)
+energy_data_sheet7$Mining <- as.numeric(energy_data_sheet7$Mining)
+energy_data_sheet7$Manufacturing <- as.numeric(energy_data_sheet7$Manufacturing)
+energy_data_sheet7$`Electricity generation` <- as.numeric(energy_data_sheet7$`Electricity generation`)
+energy_data_sheet7$Construction <- as.numeric(energy_data_sheet7$Construction)
+energy_data_sheet7$Transport <- as.numeric(energy_data_sheet7$Transport)
+energy_data_sheet7$`Water and waste b` <- as.numeric(energy_data_sheet7$`Water and waste b`)
+energy_data_sheet7$`Commercial and services c` <- as.numeric(energy_data_sheet7$`Commercial and services c`)
+energy_data_sheet7$Residential <- as.numeric(energy_data_sheet7$Residential)
+energy_data_sheet7$`Other d` <- as.numeric(energy_data_sheet7$`Other d`)
+energy_data_sheet7$Total <- as.numeric(energy_data_sheet7$Total)
+energy_data_sheet7[is.na(energy_data_sheet7)] <- 0
+
+# Preprocessing Sheet 8 (TAS)
+energy_data_sheet8 <- read_xlsx("Australian Energy Statistics 2023 Table E.xlsx", sheet = 8, range = 'B41:M55')
+colnames(energy_data_sheet8) <- colnames(energy_data_sheet3)
+energy_data_sheet8$State <- "TAS"
+energy_data_sheet8$Year <- substr(energy_data_sheet8$Year, start = 1, stop = 4)
+energy_data_sheet8$Year <- as.numeric(energy_data_sheet8$Year)   # Convert to the ending year of the range
+energy_data_sheet8$Agriculture <- as.numeric(energy_data_sheet8$Agriculture)
+energy_data_sheet8$Mining <- as.numeric(energy_data_sheet8$Mining)
+energy_data_sheet8$Manufacturing <- as.numeric(energy_data_sheet8$Manufacturing)
+energy_data_sheet8$`Electricity generation` <- as.numeric(energy_data_sheet8$`Electricity generation`)
+energy_data_sheet8$Construction <- as.numeric(energy_data_sheet8$Construction)
+energy_data_sheet8$Transport <- as.numeric(energy_data_sheet8$Transport)
+energy_data_sheet8$`Water and waste b` <- as.numeric(energy_data_sheet8$`Water and waste b`)
+energy_data_sheet8$`Commercial and services c` <- as.numeric(energy_data_sheet8$`Commercial and services c`)
+energy_data_sheet8$Residential <- as.numeric(energy_data_sheet8$Residential)
+energy_data_sheet8$`Other d` <- as.numeric(energy_data_sheet8$`Other d`)
+energy_data_sheet8$Total <- as.numeric(energy_data_sheet8$Total)
+energy_data_sheet8[is.na(energy_data_sheet8)] <- 0
+
+# Preprocessing Sheet 9 (NT)
+energy_data_sheet9 <- read_xlsx("Australian Energy Statistics 2023 Table E.xlsx", sheet = 9, range = 'B41:M55')
+colnames(energy_data_sheet9) <- colnames(energy_data_sheet3)
+energy_data_sheet9$State <- "NT"
+energy_data_sheet9$Year <- substr(energy_data_sheet9$Year, start = 1, stop = 4)
+energy_data_sheet9$Year <- as.numeric(energy_data_sheet9$Year)   # Convert to the ending year of the range
+energy_data_sheet9$Agriculture <- as.numeric(energy_data_sheet9$Agriculture)
+energy_data_sheet9$Mining <- as.numeric(energy_data_sheet9$Mining)
+energy_data_sheet9$Manufacturing <- as.numeric(energy_data_sheet9$Manufacturing)
+energy_data_sheet9$`Electricity generation` <- as.numeric(energy_data_sheet9$`Electricity generation`)
+energy_data_sheet9$Construction <- as.numeric(energy_data_sheet9$Construction)
+energy_data_sheet9$Transport <- as.numeric(energy_data_sheet9$Transport)
+energy_data_sheet9$`Water and waste b` <- as.numeric(energy_data_sheet9$`Water and waste b`)
+energy_data_sheet9$`Commercial and services c` <- as.numeric(energy_data_sheet9$`Commercial and services c`)
+energy_data_sheet9$Residential <- as.numeric(energy_data_sheet9$Residential)
+energy_data_sheet9$`Other d` <- as.numeric(energy_data_sheet9$`Other d`)
+energy_data_sheet9$Total <- as.numeric(energy_data_sheet9$Total)
+energy_data_sheet9[is.na(energy_data_sheet9)] <- 0
+
+# Combine all data frames into one
+combined_data2 <- bind_rows(energy_data_sheet3, energy_data_sheet4, energy_data_sheet5, energy_data_sheet6, energy_data_sheet7, energy_data_sheet8, energy_data_sheet9)
+
+# Filter data for the years 2008 to 2021
+combined_data2 <- combined_data2 %>%
+  filter(Year >= 2008 & Year <= 2021)
+
+# Print the structure and first few rows of the final data frame to verify
+str(combined_data2)
+print(head(combined_data2))
+
+# Save the combined data frame to a CSV file
+write.csv(combined_data2, "combined_data2.csv", row.names = FALSE)
+
+```
+
+```{r shinyapps}
+
+# Ensure combined_data1 Year is in the same format as combined_data2
+combined_data1$Year <- as.numeric(combined_data1$Year)
+
+# Perform a full join to combine data based on Year and State
+combined_data <- full_join(combined_data1, combined_data2, by = c("Year", "State"))
+
+# Print the structure and first few rows of the final data frame to verify
+str(combined_data)
+print(head(combined_data))
+
+# Save the combined data frame to a CSV file
+write.csv(combined_data, "combined_data.csv", row.names = FALSE)
+
+
+
+# Load the combined data from CSV
+combined_data <- read_csv("combined_data.csv")
+
+# Rename the columns
+colnames(combined_data) <- c("Year", "Coal", "Oil", "Gas", "Renewables", "Statistical_Discrepancy", "Total_Consumption", "State", 
+                             "Agriculture", "Mining", "Manufacturing", "Electricity_Generation", "Construction", "Transport", 
+                             "Water_and_Waste", "Commercial_and_Services", "Residential", "Other", "Total_Sector_Consumption")
+
+# Save the updated data to a new CSV file
+write_csv(combined_data, "combined_data.csv")
+
+# Print the structure and first few rows of the updated data to verify
+str(combined_data)
+head(combined_data)
+
+
+```
+```{r shinyapps server}
+
+
+# Load necessary libraries
+library(shiny)
+library(plotly)
+library(dplyr)
+
+# Load combined data from CSV
+combined_data <- read.csv('combined_data.csv')
+
+# Ensure Year is treated as numeric
+combined_data$Year <- as.numeric(combined_data$Year)
+
+# Filter out problematic rows (if any)
+combined_data <- combined_data[combined_data$Year >= 2008 & combined_data$Year <= 2022, ]
+
+
+# Save the updated data to a new CSV file
+write_csv(combined_data, "combined_data.csv")
+
+# Print the structure and first few rows of the updated data to verify
+head(combined_data)
+
+
+```
+
+``` {r }
+# Load necessary libraries
+library(shiny)
+library(shinythemes)
+library(shinydashboard)
+library(plotly)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(stringr)
+
+# Load combined data from CSV
+combined_data <- read.csv('combined_data.csv')
+
+# Ensure Year is treated as numeric
+combined_data$Year <- as.numeric(combined_data$Year)
+
+# Rename columns to avoid potential issues
+colnames(combined_data) <- c("Year", "Coal", "Oil", "Gas", "Renewables", "Statistical_Discrepancy", "Total_Consumption", "State", 
+                             "Agriculture", "Mining", "Manufacturing", "Electricity_Generation", "Construction", "Transport", 
+                             "Water_and_Waste", "Commercial_and_Services", "Residential", "Other", "Total_Sector_Consumption")
+
+# Define custom color palette for visuals
+custom_colors <- c("#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2", "#7f7f7f", "#FFA500", "#17becf")
+
+# Define UI for application
+ui <- dashboardPage(
+  skin = "blue",
+  dashboardHeader(title = "Australian Energy Dashboard"),
+  dashboardSidebar(
+    width = 350,
+    sidebarMenu(
+      id = "tabs",
+      menuItem("Energy Consumption Trends", tabName = "consumption_trends", icon = icon("chart-line")),
+      menuItem("Renewable vs Non-Renewable Energy", tabName = "renewable_nonrenewable", icon = icon("leaf")),
+      menuItem("Sectoral Energy Intensity", tabName = "sector_intensity", icon = icon("industry"))
+    )
+  ),
+  dashboardBody(
+    tags$head(
+      tags$style(HTML("
+        body {
+          font-family: 'Roboto', sans-serif;
+        }
+        .box-title {
+          font-size: 20px;
+          font-weight: bold;
+          color: #FFFFFF;
+        }
+        .sidebar-menu li a {
+          font-size: 16px;
+        }
+        .skin-blue .main-header .logo {
+          background-color: #00798C;
+          font-size: 24px;
+        }
+        .skin-blue .main-header .navbar {
+          background-color: #00798C;
+        }
+        .skin-blue .main-sidebar {
+          background-color: #2C3E50;
+        }
+        .skin-blue .main-sidebar .sidebar-menu .active a {
+          background-color: #16A085;
+          color: #FFFFFF;
+        }
+        .box {
+          border-top: 3px solid #00798C;
+        }
+        .nav-tabs-custom .nav-tabs li.active a {
+          color: #FFFFFF;
+        }
+        .nav-tabs-custom .nav-tabs li.active a:hover {
+          color: #FFFFFF;
+        }
+        .box-title {
+          color: #FFFFFF !important;
+        }
+        .plotly .modebar-group .modebar-btn {
+          color: #FFFFFF !important;
+        }
+        .references {
+          font-size: 12px;
+          color: #555555;
+          margin-top: 200px;
+        }
+        .references2 {
+          font-size: 12px;
+          color: #555555;
+          margin-top: 30px;
+        }
+        .references3 {
+          font-size: 12px;
+          color: #555555;
+          margin-top: 30px;
+        }
+        .separator {
+          border-top: 1px solid #E0E0E0;
+          margin-top: 20px;
+          margin-bottom: 20px;
+        }
+      "))
+    ),
+    tabItems(
+      tabItem(tabName = "consumption_trends",
+              fluidRow(
+                box(title = "Energy Consumption Trends", status = "primary", solidHeader = TRUE, width = 12,
+                    plotlyOutput("linechart"),
+                    p("This panel shows the trend of energy consumption over time for the selected states. Explore how the consumption of various energy sources such as Coal, Oil, Gas, and Renewables has changed from 2008 to 2021.")
+                )
+              ),
+              div(class = "separator"),
+              div(class = "references",
+                  p("References"),
+                  p("Department of Climate Change, Energy, the Environment and Water. (2023, September 29). Australian Energy Update 2023 | energy.gov.au. Energy.gov.au. https://www.energy.gov.au/publications/australian-energy-update-2023"),
+                  p("Sample layouts. (n.d.). Pkgs.rstudio.com. Retrieved June 11, 2024, from https://pkgs.rstudio.com/flexdashboard/articles/layouts.html#storyboard-1"),
+                  p("DataCamp. (n.d.). Building dashboards with shinydashboard. Retrieved June 11, 2024, from https://app.datacamp.com/learn/courses/building-dashboards-with-shinydashboard"),
+                  p("Color Palettes for Business Dashboards and Scorecards | AESalazar Group. (n.d.). Aesalazar.com. Retrieved June 11, 2024, from https://aesalazar.com/blog/professional-color-combinations-for-dashboards-or-mobile-bi-applications#:~:text=%E2%80%8D")
+              )
+      ),
+      tabItem(tabName = "renewable_nonrenewable",
+              fluidRow(
+                box(title = "Renewable and Non-Renewable Energy Consumption", status = "primary", solidHeader = TRUE, width = 12,
+                    plotlyOutput("renewable_nonrenewable_plot", height = "600px"),
+                    p("This panel shows the trend of renewable and non-renewable energy consumption over time for the selected states. Understand the impact of renewable energy policies and the growth in renewable energy sources.")
+                )
+              ),
+              div(class = "separator"),
+              div(class = "references2",
+                  p("References"),
+                  p("Department of Climate Change, Energy, the Environment and Water. (2023, September 29). Australian Energy Update 2023 | energy.gov.au. Energy.gov.au. https://www.energy.gov.au/publications/australian-energy-update-2023"),
+                  p("Sample layouts. (n.d.). Pkgs.rstudio.com. Retrieved June 11, 2024, from https://pkgs.rstudio.com/flexdashboard/articles/layouts.html#storyboard-1"),
+                  p("DataCamp. (n.d.). Building dashboards with shinydashboard. Retrieved June 11, 2024, from https://app.datacamp.com/learn/courses/building-dashboards-with-shinydashboard"),
+                  p("Color Palettes for Business Dashboards and Scorecards | AESalazar Group. (n.d.). Aesalazar.com. Retrieved June 11, 2024, from https://aesalazar.com/blog/professional-color-combinations-for-dashboards-or-mobile-bi-applications#:~:text=%E2%80%8D")
+              )
+      ),
+      tabItem(tabName = "sector_intensity",
+              fluidRow(
+                box(title = "Sectoral Energy Consumption Trends", status = "primary", solidHeader = TRUE, width = 12,
+                    plotlyOutput("sector_intensity_plot" , height = "600px"),
+                    p("This panel shows the trend of energy consumption across different sectors over time.")
+                )
+              ),
+              div(class = "separator"),
+              div(class = "references3",
+                  p("References"),
+                  p("Department of Climate Change, Energy, the Environment and Water. (2023, September 29). Australian Energy Update 2023 | energy.gov.au. Energy.gov.au. https://www.energy.gov.au/publications/australian-energy-update-2023"),
+                  p("Sample layouts. (n.d.). Pkgs.rstudio.com. Retrieved June 11, 2024, from https://pkgs.rstudio.com/flexdashboard/articles/layouts.html#storyboard-1"),
+                  p("DataCamp. (n.d.). Building dashboards with shinydashboard. Retrieved June 11, 2024, from https://app.datacamp.com/learn/courses/building-dashboards-with-shinydashboard"),
+                  p("Color Palettes for Business Dashboards and Scorecards | AESalazar Group. (n.d.). Aesalazar.com. Retrieved June 11, 2024, from https://aesalazar.com/blog/professional-color-combinations-for-dashboards-or-mobile-bi-applications#:~:text=%E2%80%8D")
+              )
+      )
+    )
+  )
+)
+
+
+
+
+
+# Server Code
+server <- function(input, output) {
+  # Function to accumulate data
+  accumulate_by <- function(dat, var) {
+    var <- lazyeval::f_eval(var, dat)
+    lvls <- plotly:::getLevels(var)
+    dats <- lapply(seq_along(lvls), function(x) {
+      cbind(dat[var %in% lvls[seq(1, x)], ], frame = lvls[[x]])
+    })
+    dplyr::bind_rows(dats)
+  }
+
+  # Generate animated line chart with scatter points for energy consumption
+  output$linechart <- renderPlotly({
+    filtered_data <- combined_data %>%
+      filter(State %in% c("NSW", "VIC", "QLD", "WA", "SA", "TAS", "NT")) %>%
+      accumulate_by(~Year)
+
+    plot_ <- plot_ly(
+      data = filtered_data, 
+      x = ~Year, 
+      y = ~Total_Consumption, 
+      color = ~State, 
+      colors = custom_colors, 
+      type = 'scatter', 
+      mode = 'lines+markers',  # Add scatter points along with lines
+      frame = ~frame,
+      line = list(shape = "linear")
+    ) %>%
+      layout(
+        title = list(text = "State-wise Total Energy Consumption (2008-2021)", font = list(size = 18, color = "#00798C")),
+        xaxis = list(title = "Year", tickangle = -45, dtick = 1, tickmode = "linear", range = c(2007.5, 2021.5)),
+        yaxis = list(title = "Total Energy Consumption (PJ)"),
+        showlegend = TRUE,
+        hovermode = "closest"
+      ) %>%
+      animation_opts(frame = 100, transition = 0, redraw = FALSE) %>%
+      animation_slider(hide = FALSE) %>%
+      animation_button(x = 1.02, xanchor = "right", y = 0, yanchor = "bottom")  
+    plot_
+  })
+
+  # Generate combined subplot for Renewable and Non-Renewable Energy Consumption
+  output$renewable_nonrenewable_plot <- renderPlotly({
+    filtered_data <- combined_data %>%
+      filter(State %in% c("NSW", "VIC", "QLD", "WA", "SA", "TAS", "NT"), Year >= 2008, Year <= 2021) %>%
+      mutate(NonRenewables = Total_Consumption - Renewables)  
+
+    plot_renew <- plot_ly(
+      data = filtered_data, 
+      x = ~Year, 
+      y = ~Renewables, 
+      color = ~State, 
+      colors = custom_colors, 
+      type = 'scatter', 
+      mode = 'lines+markers', 
+      line = list(shape = "spline"),
+      showlegend = FALSE
+    ) %>%
+      layout(
+        title = list(text = "Renewable Energy Consumption", font = list(size = 14, color = "#00798C")),
+        xaxis = list(title = "Year", tickangle = -45, dtick = 1, tickmode = "linear"),
+        yaxis = list(title = "Renewable Energy Consumption (PJ)")
+      )
+
+    plot_nonrenew <- plot_ly(
+      data = filtered_data, 
+      x = ~Year, 
+      y = ~NonRenewables, 
+      color = ~State, 
+      colors = custom_colors, 
+      type = 'scatter', 
+      mode = 'lines+markers', 
+      line = list(shape = "spline"),
+      showlegend = TRUE  
+    ) %>%
+      layout(
+        title = list(text = "Non-Renewable Energy Consumption", font = list(size = 14, color = "#00798C")),
+        xaxis = list(title = "Year", tickangle = -45, dtick = 1, tickmode = "linear"),
+        yaxis = list(title = "Non-Renewable Energy Consumption (PJ)")
+      )
+
+    subplot(plot_renew, plot_nonrenew, nrows = 1, shareX = TRUE, shareY = FALSE, titleX = TRUE, titleY = TRUE) %>%
+      layout(title = list(text = "State-wise Energy Consumption (2008-2021)", font = list(size = 18, color = "#00798C")),
+             annotations = list(
+               list(x = 0.25, y = 1, text = "Renewable Energy Consumption", showarrow = FALSE, xref = 'paper', yref = 'paper', font = list(size = 14, color = "#00798C")),
+               list(x = 0.75, y = 1, text = "Non-Renewable Energy Consumption", showarrow = FALSE, xref = 'paper', yref = 'paper', font = list(size = 14, color = "#00798C"))
+             ),
+             legend = list(x = 1, y = 0.5, bgcolor = 'rgba(255, 255, 255, 0)'))
+  })
+
+  # Plot for Sectoral Energy Intensity
+  output$sector_intensity_plot <- renderPlotly({
+    sector_data <- combined_data %>%
+      filter(Year <= 2021) %>%
+      select(Year, Agriculture, Mining, Manufacturing, Electricity_Generation, Construction, Transport, Water_and_Waste, Commercial_and_Services, Residential, Other) %>%
+      gather(key = "Sector", value = "Consumption", -Year) %>%
+      mutate(Sector = str_replace_all(Sector, "_", " "))
+
+    gg <- ggplot(sector_data, aes(x = Year, y = Consumption, fill = Sector)) +
+      geom_bar(stat = "identity", position = "dodge", width = 0.5) +  # Adjust width to reduce broadness of bars
+      facet_wrap(~ Sector, scales = "free_y", ncol = 2) +
+      labs(title = "Sectoral Energy Consumption Trends (2008-2021)", y = "Energy Consumption (PJ)", x = "Year") +
+      scale_x_continuous(breaks = seq(2008, 2021, by = 1)) +
+      theme_minimal() +
+      theme(legend.position = "none", strip.text = element_text(size = 9), plot.title = element_text(size = 18, face = "bold"))
+
+    ggplotly(gg)
+  })
+}
+
+# Run the application
+shinyApp(ui = ui, server = server)
+
+
+
+```
+
+
+
+
+
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
